@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         净阅 ClearRead — 多站阅读增强器
 // @namespace    https://local.invalid/clearread
-// @version      0.3.2
+// @version      0.3.3
 // @description  多站网页阅读增强器；当前支持清理微博广告、荐读和侧栏噪音，并提供专注模式与 J/K 阅读导航。
 // @author       Desnowy (sakaman)
 // @license      MIT
@@ -22,13 +22,14 @@
 (function () {
     'use strict';
 
-    const VERSION = '0.3.2';
+    const VERSION = '0.3.3';
     const INSTANCE_KEY = '__CLEARREAD_INSTANCE__';
     const STORAGE_KEY = 'clearread.settings.v1';
     const LEGACY_STORAGE_KEYS = Object.freeze(['weibo-reader-enhancer.settings.v1']);
     const ROOT_ID = 'clearread-root';
     const HIDDEN_CLASS = 'wre-hidden';
     const VIRTUAL_HIDDEN_CLASS = 'wre-virtual-hidden';
+    const VIRTUAL_ITEM_CLASS = 'wre-virtual-item-hidden';
 
     if (window[INSTANCE_KEY]) {
         return;
@@ -124,12 +125,12 @@
         }
 
         /*
-         * vue-virtual-scroller ignores a measured size of zero and keeps the
-         * previous cached card height. Keep hidden feed cards at one invisible
-         * pixel so the scroller can update its offsets instead of leaving a gap.
+         * Weibo observes .wbpro-scroller-item when updating the virtual list.
+         * A zero measurement is ignored, so collapse that observed wrapper to
+         * one invisible pixel and let the scroller rewrite its cached offsets.
          */
-        html.wre-enabled .${HIDDEN_CLASS}.${VIRTUAL_HIDDEN_CLASS} {
-            display: block !important;
+        html.wre-enabled .wbpro-scroller-item.${VIRTUAL_ITEM_CLASS} {
+            display: flex !important;
             box-sizing: border-box !important;
             width: 100% !important;
             height: 1px !important;
@@ -142,6 +143,10 @@
             visibility: hidden !important;
             opacity: 0 !important;
             pointer-events: none !important;
+        }
+
+        html.wre-enabled .wbpro-scroller-item.${VIRTUAL_ITEM_CLASS} > * {
+            display: none !important;
         }
 
         html.wre-enabled article {
@@ -439,18 +444,23 @@
         return null;
     }
 
-    function isVirtualizedFeedArticle(element, source) {
-        return source === 'article'
-            && element.matches('article')
-            && Boolean(element.closest('.vue-recycle-scroller__item-view, .vue-recycle-scroller'));
+    function findVirtualScrollerItem(element) {
+        const item = element.matches('.wbpro-scroller-item')
+            ? element
+            : element.closest('.wbpro-scroller-item');
+        return item?.closest('.vue-recycle-scroller__item-view') ? item : null;
     }
 
     function markHidden(element, category, reason, source) {
         if (!(element instanceof Element) || element.id === ROOT_ID || element.closest(`#${ROOT_ID}`)) {
             return;
         }
+        const virtualItem = (source === 'article' || source === 'legacy-ad')
+            ? findVirtualScrollerItem(element)
+            : null;
         element.classList.add(HIDDEN_CLASS);
-        element.classList.toggle(VIRTUAL_HIDDEN_CLASS, isVirtualizedFeedArticle(element, source));
+        element.classList.toggle(VIRTUAL_HIDDEN_CLASS, Boolean(virtualItem));
+        virtualItem?.classList.add(VIRTUAL_ITEM_CLASS);
         element.dataset.wreCategory = category;
         element.dataset.wreReason = reason;
         element.dataset.wreSource = source;
@@ -460,7 +470,9 @@
         if (!(element instanceof Element)) {
             return;
         }
-        element.classList.remove(HIDDEN_CLASS, VIRTUAL_HIDDEN_CLASS);
+        const virtualItem = findVirtualScrollerItem(element);
+        element.classList.remove(HIDDEN_CLASS, VIRTUAL_HIDDEN_CLASS, VIRTUAL_ITEM_CLASS);
+        virtualItem?.classList.remove(VIRTUAL_ITEM_CLASS);
         delete element.dataset.wreCategory;
         delete element.dataset.wreReason;
         delete element.dataset.wreSource;
@@ -475,6 +487,15 @@
     function restoreAllHidden() {
         for (const element of document.querySelectorAll('[data-wre-source]')) {
             restoreHidden(element);
+        }
+    }
+
+    function reconcileVirtualItems() {
+        const ownerSelector = `.${HIDDEN_CLASS}.${VIRTUAL_HIDDEN_CLASS}[data-wre-source]`;
+        for (const item of document.querySelectorAll(`.${VIRTUAL_ITEM_CLASS}`)) {
+            if (!item.matches(ownerSelector) && !item.querySelector(ownerSelector)) {
+                item.classList.remove(VIRTUAL_ITEM_CLASS);
+            }
         }
     }
 
@@ -651,6 +672,7 @@
         processSponsoredTopics();
         processSidebar();
         processVideos();
+        reconcileVirtualItems();
         updatePanel();
     }
 

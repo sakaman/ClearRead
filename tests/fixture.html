@@ -56,10 +56,10 @@
                 <div class="vue-recycle-scroller__item-wrapper">
                     <div id="virtual-ad-view" class="vue-recycle-scroller__item-view" style="transform: translateY(0px)">
                         <div id="virtual-ad-measure" class="wbpro-scroller-item">
-                            <article id="ad" class="woo-panel-main" feedtype="ad">
+                            <div id="ad" class="woo-panel-main" feedtype="ad">
                                 <a href="/u/10003">品牌账号</a>
-                                <div class="wbpro-feed-content">这是一条带明确属性的广告，用较高卡片模拟信息流广告。</div>
-                            </article>
+                                <div class="wbpro-feed-content">这是一条没有 article 外壳的广告，用较高卡片模拟信息流广告。</div>
+                            </div>
                         </div>
                     </div>
                     <div id="virtual-next-view" class="vue-recycle-scroller__item-view">
@@ -82,6 +82,10 @@
                     <a href="/u/10002">推荐账号</a>
                     <div class="meta"><div class="wbpro-tag"><span>荐读</span></div> 20分钟前</div>
                     <div class="wbpro-feed-content">这是一条荐读内容。</div>
+                </article>
+                <article id="article-ad" class="woo-panel-main" feedtype="ad">
+                    <a href="/u/10008">另一品牌账号</a>
+                    <div class="wbpro-feed-content">这是一条使用 article 外壳的普通广告样本。</div>
                 </article>
                 <article id="keyword-blocked" class="woo-panel-main">
                     <a href="/u/10005">普通账号</a>
@@ -155,8 +159,10 @@
                 ['普通微博保留', !isHidden('#normal')],
                 ['广告后的微博保留', !isHidden('#normal-after-ad')],
                 ['荐读微博隐藏', isHidden('#recommended')],
-                ['广告微博隐藏', isHidden('#ad')],
-                ['虚拟广告采用可测量折叠', ad.classList.contains('wre-virtual-hidden') && ad.getBoundingClientRect().height > 0 && ad.getBoundingClientRect().height <= 2],
+                ['非 article 虚拟广告隐藏', isHidden('#ad')],
+                ['article 广告微博隐藏', isHidden('#article-ad')],
+                ['虚拟广告标记测量外层', ad.classList.contains('wre-virtual-hidden') && document.querySelector('#virtual-ad-measure').classList.contains('wre-virtual-item-hidden')],
+                ['虚拟列表测量节点折叠为 1px', ad.getBoundingClientRect().height === 0 && document.querySelector('#virtual-ad-measure').getBoundingClientRect().height > 0 && document.querySelector('#virtual-ad-measure').getBoundingClientRect().height <= 2],
                 ['虚拟列表缓存高度已更新', virtualState.initialSize > 100 && virtualState.currentSize <= 2],
                 ['广告后无大面积空白', document.querySelector('#virtual-next-view').getBoundingClientRect().top - document.querySelector('#virtual-ad-view').getBoundingClientRect().top <= 2],
                 ['动态推广隐藏', isHidden('#dynamic-recommended')],
