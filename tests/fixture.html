@@ -13,6 +13,12 @@
         #__sidebar { width: 290px; }
         .woo-panel-main, .wbpro-side { margin-bottom: 10px; padding: 16px; border-radius: 8px; background: #fff; box-shadow: 0 1px 3px #0001; }
         article { min-height: 92px; }
+        .vue-recycle-scroller { position: relative; height: 112px; margin-bottom: 10px; }
+        .vue-recycle-scroller__item-wrapper { position: relative; height: 112px; }
+        .vue-recycle-scroller__item-view { position: absolute; inset: 0 0 auto; width: 100%; }
+        .wbpro-scroller-item { display: flex; width: 100%; }
+        .wbpro-scroller-item > article { flex: 1 1 auto; }
+        #ad { min-height: 280px; }
         .wbpro-tag { display: inline-flex; color: #ff8200; }
         .wbpro-feed-content { margin-top: 10px; }
         .result-pass { color: #14853d; }
@@ -46,7 +52,27 @@
             <div class="woo-panel-main publish-card">
                 <textarea placeholder="有什么新鲜事想分享给大家？"></textarea>
             </div>
-            <div id="scroller">
+            <div id="scroller" class="vue-recycle-scroller">
+                <div class="vue-recycle-scroller__item-wrapper">
+                    <div id="virtual-ad-view" class="vue-recycle-scroller__item-view" style="transform: translateY(0px)">
+                        <div id="virtual-ad-measure" class="wbpro-scroller-item">
+                            <article id="ad" class="woo-panel-main" feedtype="ad">
+                                <a href="/u/10003">品牌账号</a>
+                                <div class="wbpro-feed-content">这是一条带明确属性的广告，用较高卡片模拟信息流广告。</div>
+                            </article>
+                        </div>
+                    </div>
+                    <div id="virtual-next-view" class="vue-recycle-scroller__item-view">
+                        <div class="wbpro-scroller-item">
+                            <article id="normal-after-ad" class="woo-panel-main">
+                                <a href="/u/10007">下一位正常用户</a>
+                                <div class="wbpro-feed-content">广告后的正常微博不应被大面积空白推远。</div>
+                            </article>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="static-feed">
                 <article id="normal" class="woo-panel-main">
                     <a href="/u/10001">正常用户</a>
                     <div>3分钟前 来自微博网页版</div>
@@ -56,10 +82,6 @@
                     <a href="/u/10002">推荐账号</a>
                     <div class="meta"><div class="wbpro-tag"><span>荐读</span></div> 20分钟前</div>
                     <div class="wbpro-feed-content">这是一条荐读内容。</div>
-                </article>
-                <article id="ad" class="woo-panel-main" feedtype="ad">
-                    <a href="/u/10003">品牌账号</a>
-                    <div class="wbpro-feed-content">这是一条带明确属性的广告。</div>
                 </article>
                 <article id="keyword-blocked" class="woo-panel-main">
                     <a href="/u/10005">普通账号</a>
@@ -85,6 +107,31 @@
         </div>
     </main>
 
+    <script>
+        (() => {
+            const measuredItem = document.querySelector('#virtual-ad-measure');
+            const nextView = document.querySelector('#virtual-next-view');
+            const initialSize = measuredItem.offsetHeight;
+            const state = window.__fixtureVirtualState = {
+                initialSize,
+                currentSize: initialSize,
+            };
+
+            const applyMeasuredSize = () => {
+                const nextSize = Math.trunc(measuredItem.offsetHeight);
+                // Mirrors vue-virtual-scroller: a zero measurement is ignored.
+                if (nextSize) {
+                    state.currentSize = nextSize;
+                    nextView.style.transform = `translateY(${nextSize}px)`;
+                }
+            };
+
+            nextView.style.transform = `translateY(${initialSize}px)`;
+            const resizeObserver = new ResizeObserver(applyMeasuredSize);
+            resizeObserver.observe(measuredItem);
+            window.__fixtureVirtualResizeObserver = resizeObserver;
+        })();
+    </script>
     <script src="../clearread.user.js"></script>
     <script>
         window.setTimeout(() => {
@@ -92,19 +139,26 @@
             dynamicArticle.id = 'dynamic-recommended';
             dynamicArticle.className = 'woo-panel-main';
             dynamicArticle.innerHTML = '<a href="/u/10004">动态账号</a><div class="meta"><span class="wbpro-tag">推广</span></div><div class="wbpro-feed-content">动态插入的推广内容。</div>';
-            document.querySelector('#scroller').appendChild(dynamicArticle);
+            document.querySelector('#static-feed').appendChild(dynamicArticle);
         }, 80);
 
         function finishFixture(attempt = 0) {
             const isHidden = (id) => document.querySelector(id).classList.contains('wre-hidden');
-            if ((!document.querySelector('#dynamic-recommended') || !isHidden('#dynamic-recommended')) && attempt < 20) {
+            const virtualState = window.__fixtureVirtualState;
+            const virtualListReady = virtualState.currentSize > 0 && virtualState.currentSize <= 2;
+            if ((!document.querySelector('#dynamic-recommended') || !isHidden('#dynamic-recommended') || !virtualListReady) && attempt < 40) {
                 window.setTimeout(() => finishFixture(attempt + 1), 50);
                 return;
             }
+            const ad = document.querySelector('#ad');
             const checks = [
                 ['普通微博保留', !isHidden('#normal')],
+                ['广告后的微博保留', !isHidden('#normal-after-ad')],
                 ['荐读微博隐藏', isHidden('#recommended')],
                 ['广告微博隐藏', isHidden('#ad')],
+                ['虚拟广告采用可测量折叠', ad.classList.contains('wre-virtual-hidden') && ad.getBoundingClientRect().height > 0 && ad.getBoundingClientRect().height <= 2],
+                ['虚拟列表缓存高度已更新', virtualState.initialSize > 100 && virtualState.currentSize <= 2],
+                ['广告后无大面积空白', document.querySelector('#virtual-next-view').getBoundingClientRect().top - document.querySelector('#virtual-ad-view').getBoundingClientRect().top <= 2],
                 ['动态推广隐藏', isHidden('#dynamic-recommended')],
                 ['屏蔽词规则生效', isHidden('#keyword-blocked')],
                 ['屏蔽用户规则生效', isHidden('#author-blocked')],

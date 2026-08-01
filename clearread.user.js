@@ -1,10 +1,14 @@
 // ==UserScript==
 // @name         净阅 ClearRead — 多站阅读增强器
 // @namespace    https://local.invalid/clearread
-// @version      0.3.0
+// @version      0.3.2
 // @description  多站网页阅读增强器；当前支持清理微博广告、荐读和侧栏噪音，并提供专注模式与 J/K 阅读导航。
 // @author       Desnowy (sakaman)
 // @license      MIT
+// @homepageURL  https://github.com/sakaman/ClearRead
+// @supportURL   https://github.com/sakaman/ClearRead/issues
+// @updateURL    https://raw.githubusercontent.com/sakaman/ClearRead/main/clearread.user.js
+// @downloadURL  https://raw.githubusercontent.com/sakaman/ClearRead/main/clearread.user.js
 // @match        https://weibo.com/*
 // @match        https://www.weibo.com/*
 // @run-at       document-start
@@ -18,12 +22,13 @@
 (function () {
     'use strict';
 
-    const VERSION = '0.3.0';
+    const VERSION = '0.3.2';
     const INSTANCE_KEY = '__CLEARREAD_INSTANCE__';
     const STORAGE_KEY = 'clearread.settings.v1';
     const LEGACY_STORAGE_KEYS = Object.freeze(['weibo-reader-enhancer.settings.v1']);
     const ROOT_ID = 'clearread-root';
     const HIDDEN_CLASS = 'wre-hidden';
+    const VIRTUAL_HIDDEN_CLASS = 'wre-virtual-hidden';
 
     if (window[INSTANCE_KEY]) {
         return;
@@ -116,6 +121,27 @@
 
         html.wre-enabled .${HIDDEN_CLASS} {
             display: none !important;
+        }
+
+        /*
+         * vue-virtual-scroller ignores a measured size of zero and keeps the
+         * previous cached card height. Keep hidden feed cards at one invisible
+         * pixel so the scroller can update its offsets instead of leaving a gap.
+         */
+        html.wre-enabled .${HIDDEN_CLASS}.${VIRTUAL_HIDDEN_CLASS} {
+            display: block !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+            height: 1px !important;
+            min-height: 1px !important;
+            max-height: 1px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            overflow: hidden !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
         }
 
         html.wre-enabled article {
@@ -413,11 +439,18 @@
         return null;
     }
 
+    function isVirtualizedFeedArticle(element, source) {
+        return source === 'article'
+            && element.matches('article')
+            && Boolean(element.closest('.vue-recycle-scroller__item-view, .vue-recycle-scroller'));
+    }
+
     function markHidden(element, category, reason, source) {
         if (!(element instanceof Element) || element.id === ROOT_ID || element.closest(`#${ROOT_ID}`)) {
             return;
         }
         element.classList.add(HIDDEN_CLASS);
+        element.classList.toggle(VIRTUAL_HIDDEN_CLASS, isVirtualizedFeedArticle(element, source));
         element.dataset.wreCategory = category;
         element.dataset.wreReason = reason;
         element.dataset.wreSource = source;
@@ -427,7 +460,7 @@
         if (!(element instanceof Element)) {
             return;
         }
-        element.classList.remove(HIDDEN_CLASS);
+        element.classList.remove(HIDDEN_CLASS, VIRTUAL_HIDDEN_CLASS);
         delete element.dataset.wreCategory;
         delete element.dataset.wreReason;
         delete element.dataset.wreSource;

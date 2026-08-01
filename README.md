@@ -2,6 +2,8 @@
 
 一个可扩展到多个网站的本地阅读增强 userscript。当前版本支持 `weibo.com` 网页端，可清理信息流广告、荐读和侧栏噪音，同时提供更舒适的排版、专注模式、视频自动播放控制与键盘阅读导航。
 
+[![油猴一键安装 ClearRead](https://img.shields.io/badge/油猴-一键安装_ClearRead-ff8200?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://raw.githubusercontent.com/sakaman/ClearRead/main/clearread.user.js)
+
 主脚本：[clearread.user.js](./clearread.user.js)
 
 项目采用站点无关的品牌名称，为后续增加知乎、X 等站点适配器预留空间；这些站点尚未包含在当前版本中。
@@ -17,9 +19,13 @@
 - 阻止非用户触发的视频自动播放；用户主动点击播放仍然可用。
 - 支持自定义屏蔽词和用户名称，规则只保存在本机。
 - 支持 `J` / `K` 切换微博，`Alt + R` 切换专注模式。
-- 兼容微博的 SPA 路由和虚拟滚动信息流，新加载内容会自动重新检查。
+- 兼容微博的 SPA 路由和虚拟滚动信息流；隐藏广告后会同步收起虚拟列表的缓存高度，新加载内容也会自动重新检查。
 
 ## 安装
+
+点击上方“油猴一键安装 ClearRead”按钮，脚本管理器会自动打开安装确认页。若浏览器没有自动识别，请使用下面的手动安装方式。
+
+一键安装版本已声明更新和下载地址。后续发布新版本并递增版本号后，Tampermonkey、Violentmonkey 等脚本管理器会按照各自的更新周期自动检查；也可以在扩展管理面板中手动检查更新。
 
 1. 安装 Tampermonkey、Violentmonkey 或其他兼容 userscript 的浏览器扩展。
 2. 打开扩展的“新建脚本”页面。
@@ -76,7 +82,7 @@
 node --check .\clearread.user.js
 ```
 
-仓库还包含 [tests/fixture.html](./tests/fixture.html)，用于验证普通微博、广告、荐读、侧栏和动态新增内容。通过任意本地静态服务器打开它即可；测试结果会显示在页面顶部。
+仓库还包含 [tests/fixture.html](./tests/fixture.html)，用于验证普通微博、广告、荐读、侧栏、动态新增内容，以及虚拟列表隐藏广告后的空白占位回归。通过任意本地静态服务器打开它即可；测试结果会显示在页面顶部。
 
 例如：
 
