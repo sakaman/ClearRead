@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>微博阅读增强器测试夹具</title>
+    <style>
+        body { margin: 0; background: #f4f5f7; color: #222; font: 14px/1.5 system-ui, sans-serif; }
+        nav { position: sticky; top: 0; z-index: 2; padding: 12px 20px; background: #fff; border-bottom: 1px solid #ddd; }
+        #fixture-result { margin-left: 10px; font-weight: 700; }
+        main { display: flex; gap: 18px; width: 980px; max-width: calc(100vw - 32px); margin: 24px auto; }
+        #homeWrap { width: 642px; }
+        #__sidebar { width: 290px; }
+        .woo-panel-main, .wbpro-side { margin-bottom: 10px; padding: 16px; border-radius: 8px; background: #fff; box-shadow: 0 1px 3px #0001; }
+        article { min-height: 92px; }
+        .wbpro-tag { display: inline-flex; color: #ff8200; }
+        .wbpro-feed-content { margin-top: 10px; }
+        .result-pass { color: #14853d; }
+        .result-fail { color: #c62828; }
+    </style>
+    <script>
+        (() => {
+            const storage = new Map();
+            storage.set('weibo-reader-enhancer.settings.v1', {
+                blockedKeywords: ['测试屏蔽词'],
+                blockedAuthors: ['屏蔽用户'],
+            });
+            window.GM_getValue = (key, fallback) => storage.has(key) ? storage.get(key) : fallback;
+            window.GM_setValue = (key, value) => storage.set(key, value);
+            window.GM_addStyle = (css) => {
+                const style = document.createElement('style');
+                style.textContent = css;
+                document.head.appendChild(style);
+            };
+            window.GM_registerMenuCommand = () => undefined;
+        })();
+    </script>
+</head>
+<body>
+    <nav>
+        动态页面测试
+        <span id="fixture-result">等待脚本运行…</span>
+    </nav>
+    <main>
+        <div id="homeWrap">
+            <div class="woo-panel-main publish-card">
+                <textarea placeholder="有什么新鲜事想分享给大家？"></textarea>
+            </div>
+            <div id="scroller">
+                <article id="normal" class="woo-panel-main">
+                    <a href="/u/10001">正常用户</a>
+                    <div>3分钟前 来自微博网页版</div>
+                    <div class="wbpro-feed-content">这是一条正常微博，正文里会讨论广告行业，但不应因此被隐藏。</div>
+                </article>
+                <article id="recommended" class="woo-panel-main">
+                    <a href="/u/10002">推荐账号</a>
+                    <div class="meta"><div class="wbpro-tag"><span>荐读</span></div> 20分钟前</div>
+                    <div class="wbpro-feed-content">这是一条荐读内容。</div>
+                </article>
+                <article id="ad" class="woo-panel-main" feedtype="ad">
+                    <a href="/u/10003">品牌账号</a>
+                    <div class="wbpro-feed-content">这是一条带明确属性的广告。</div>
+                </article>
+                <article id="keyword-blocked" class="woo-panel-main">
+                    <a href="/u/10005">普通账号</a>
+                    <div class="wbpro-feed-content">这条内容包含测试屏蔽词。</div>
+                </article>
+                <article id="author-blocked" class="woo-panel-main">
+                    <a href="/u/10006">屏蔽用户甲</a>
+                    <div class="wbpro-feed-content">这条内容由已配置的用户发布。</div>
+                </article>
+            </div>
+        </div>
+        <div id="__sidebar">
+            <div id="hot-search" class="wbpro-side">
+                <div class="wbpro-side-tit"><span>微博热搜</span></div>
+                <a id="sponsored-topic" href="https://s.weibo.com/weibo?q=test&topic_ad=1">商业热搜</a>
+                <a href="https://s.weibo.com/weibo?q=normal">普通热搜</a>
+            </div>
+            <div id="people-recommendation" class="wbpro-side">
+                <div class="wbpro-side-tit"><span>你可能感兴趣的人</span></div>
+                <p>推荐用户</p>
+            </div>
+            <div class="wbpro-side-copy">帮助中心 · 关于微博</div>
+        </div>
+    </main>
+
+    <script src="../weibo-reader-enhancer.user.js"></script>
+    <script>
+        window.setTimeout(() => {
+            const dynamicArticle = document.createElement('article');
+            dynamicArticle.id = 'dynamic-recommended';
+            dynamicArticle.className = 'woo-panel-main';
+            dynamicArticle.innerHTML = '<a href="/u/10004">动态账号</a><div class="meta"><span class="wbpro-tag">推广</span></div><div class="wbpro-feed-content">动态插入的推广内容。</div>';
+            document.querySelector('#scroller').appendChild(dynamicArticle);
+        }, 80);
+
+        function finishFixture(attempt = 0) {
+            const isHidden = (id) => document.querySelector(id).classList.contains('wre-hidden');
+            if ((!document.querySelector('#dynamic-recommended') || !isHidden('#dynamic-recommended')) && attempt < 20) {
+                window.setTimeout(() => finishFixture(attempt + 1), 50);
+                return;
+            }
+            const checks = [
+                ['普通微博保留', !isHidden('#normal')],
+                ['荐读微博隐藏', isHidden('#recommended')],
+                ['广告微博隐藏', isHidden('#ad')],
+                ['动态推广隐藏', isHidden('#dynamic-recommended')],
+                ['屏蔽词规则生效', isHidden('#keyword-blocked')],
+                ['屏蔽用户规则生效', isHidden('#author-blocked')],
+                ['侧栏推荐隐藏', isHidden('#people-recommendation')],
+                ['普通热搜保留', !isHidden('#hot-search')],
+                ['商业热搜隐藏', isHidden('#sponsored-topic')],
+                ['设置面板已挂载', Boolean(document.querySelector('#weibo-reader-enhancer-root'))],
+            ];
+            const passed = checks.filter(([, ok]) => ok).length;
+            const output = document.querySelector('#fixture-result');
+            output.textContent = `${passed}/${checks.length} 项通过：${checks.map(([name, ok]) => `${ok ? '✓' : '✗'}${name}`).join(' · ')}`;
+            output.className = passed === checks.length ? 'result-pass' : 'result-fail';
+            document.body.dataset.fixturePassed = String(passed === checks.length);
+        }
+
+        window.setTimeout(() => finishFixture(), 140);
+    </script>
+</body>
+</html>
