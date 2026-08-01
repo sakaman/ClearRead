@@ -1,8 +1,10 @@
-# 微博阅读增强器（净阅）
+# ClearRead（净阅）
 
-一个面向 `weibo.com` 网页端的本地 userscript。它清理信息流广告、荐读和侧栏噪音，同时提供更舒适的排版、专注模式、视频自动播放控制与键盘阅读导航。
+一个可扩展到多个网站的本地阅读增强 userscript。当前版本支持 `weibo.com` 网页端，可清理信息流广告、荐读和侧栏噪音，同时提供更舒适的排版、专注模式、视频自动播放控制与键盘阅读导航。
 
-主脚本：[weibo-reader-enhancer.user.js](./weibo-reader-enhancer.user.js)
+主脚本：[clearread.user.js](./clearread.user.js)
+
+项目采用站点无关的品牌名称，为后续增加知乎、X 等站点适配器预留空间；这些站点尚未包含在当前版本中。
 
 ## 功能
 
@@ -21,9 +23,9 @@
 
 1. 安装 Tampermonkey、Violentmonkey 或其他兼容 userscript 的浏览器扩展。
 2. 打开扩展的“新建脚本”页面。
-3. 删除模板内容，将 [weibo-reader-enhancer.user.js](./weibo-reader-enhancer.user.js) 的全部内容粘贴进去。
+3. 删除模板内容，将 [clearread.user.js](./clearread.user.js) 的全部内容粘贴进去。
 4. 保存脚本并刷新 `https://weibo.com/`。
-5. 页面右下角出现“净阅”按钮即表示脚本已加载。
+5. 页面右下角出现“净阅”按钮即表示 ClearRead 已加载。
 
 脚本不使用外部依赖，也不需要额外网络权限。
 
@@ -46,7 +48,7 @@
 | 阻止视频自动播放 | 开启 |
 | J / K 阅读导航 | 开启 |
 
-所有选项都可以在右下角“净阅”面板中即时修改。扩展菜单还提供打开设置、切换专注模式、编辑屏蔽词、编辑屏蔽用户和手动重新检查页面等命令。
+所有选项都可以在右下角“净阅 ClearRead”面板中即时修改。扩展菜单还提供打开设置、切换专注模式、编辑屏蔽词、编辑屏蔽用户和手动重新检查页面等命令。
 
 ## 广告识别原则
 
@@ -71,7 +73,7 @@
 检查 JavaScript 语法：
 
 ```powershell
-node --check .\weibo-reader-enhancer.user.js
+node --check .\clearread.user.js
 ```
 
 仓库还包含 [tests/fixture.html](./tests/fixture.html)，用于验证普通微博、广告、荐读、侧栏和动态新增内容。通过任意本地静态服务器打开它即可；测试结果会显示在页面顶部。

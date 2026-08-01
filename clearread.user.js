@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         微博阅读增强器（净阅）
-// @namespace    https://local.invalid/weibo-reader-enhancer
-// @version      0.1.0
-// @description  清理微博网页端广告、荐读和侧栏噪音，优化排版，并提供专注模式与 J/K 阅读导航。
-// @author       Weibo Reader Enhancer contributors
+// @name         净阅 ClearRead — 多站阅读增强器
+// @namespace    https://local.invalid/clearread
+// @version      0.3.0
+// @description  多站网页阅读增强器；当前支持清理微博广告、荐读和侧栏噪音，并提供专注模式与 J/K 阅读导航。
+// @author       Desnowy (sakaman)
 // @license      MIT
 // @match        https://weibo.com/*
 // @match        https://www.weibo.com/*
@@ -19,9 +19,10 @@
     'use strict';
 
     const VERSION = '0.3.0';
-    const INSTANCE_KEY = '__WEIBO_READER_ENHANCER_INSTANCE__';
-    const STORAGE_KEY = 'weibo-reader-enhancer.settings.v1';
-    const ROOT_ID = 'weibo-reader-enhancer-root';
+    const INSTANCE_KEY = '__CLEARREAD_INSTANCE__';
+    const STORAGE_KEY = 'clearread.settings.v1';
+    const LEGACY_STORAGE_KEYS = Object.freeze(['weibo-reader-enhancer.settings.v1']);
+    const ROOT_ID = 'clearread-root';
     const HIDDEN_CLASS = 'wre-hidden';
 
     if (window[INSTANCE_KEY]) {
@@ -256,16 +257,26 @@
         return next;
     }
 
-    function loadSettings() {
-        let stored = null;
+    function readStoredValue(key) {
         try {
             if (typeof GM_getValue === 'function') {
-                stored = GM_getValue(STORAGE_KEY, null);
-            } else {
-                stored = localStorage.getItem(STORAGE_KEY);
+                return GM_getValue(key, null);
             }
+            return localStorage.getItem(key);
         } catch (_error) {
-            stored = null;
+            return null;
+        }
+    }
+
+    function loadSettings() {
+        let stored = readStoredValue(STORAGE_KEY);
+        if (stored === null || typeof stored === 'undefined') {
+            for (const legacyKey of LEGACY_STORAGE_KEYS) {
+                stored = readStoredValue(legacyKey);
+                if (stored !== null && typeof stored !== 'undefined') {
+                    break;
+                }
+            }
         }
 
         if (typeof stored === 'string') {
@@ -650,7 +661,7 @@
     }
 
     function resetSettings() {
-        if (!window.confirm('恢复净阅默认设置？已保存的屏蔽词和用户也会被清空。')) {
+        if (!window.confirm('恢复 ClearRead 默认设置？已保存的屏蔽词和用户也会被清空。')) {
             return;
         }
         settings = sanitizeSettings(DEFAULTS);
@@ -712,9 +723,9 @@
                 .toast.visible { opacity: .94; transform: translateY(0); }
                 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
             </style>
-            <button class="launcher" type="button" aria-haspopup="dialog" aria-expanded="false" title="打开微博净阅设置">净阅</button>
-            <section class="panel" role="dialog" aria-label="微博净阅设置" hidden>
-                <header><h2>微博净阅 <small>v${VERSION}</small></h2><button class="close" type="button" aria-label="关闭">×</button></header>
+            <button class="launcher" type="button" aria-haspopup="dialog" aria-expanded="false" title="打开 ClearRead 设置">净阅</button>
+            <section class="panel" role="dialog" aria-label="ClearRead 设置" hidden>
+                <header><h2>净阅 ClearRead <small>v${VERSION}</small></h2><button class="close" type="button" aria-label="关闭">×</button></header>
                 <p class="summary" aria-live="polite">正在检查页面…</p>
                 <div class="toggles">${panelToggleMarkup()}</div>
                 <div class="range-row">
@@ -945,7 +956,7 @@
         if (typeof GM_registerMenuCommand !== 'function') {
             return;
         }
-        GM_registerMenuCommand('打开净阅设置', () => togglePanel(true));
+        GM_registerMenuCommand('打开 ClearRead 设置', () => togglePanel(true));
         GM_registerMenuCommand('切换专注模式（Alt + R）', () => {
             settings.focusMode = !settings.focusMode;
             applySettings({ message: settings.focusMode ? '已开启专注模式' : '已关闭专注模式' });

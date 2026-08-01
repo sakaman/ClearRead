@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>微博阅读增强器测试夹具</title>
+    <title>ClearRead 微博适配器测试夹具</title>
     <style>
         body { margin: 0; background: #f4f5f7; color: #222; font: 14px/1.5 system-ui, sans-serif; }
         nav { position: sticky; top: 0; z-index: 2; padding: 12px 20px; background: #fff; border-bottom: 1px solid #ddd; }
@@ -21,7 +21,7 @@
     <script>
         (() => {
             const storage = new Map();
-            storage.set('weibo-reader-enhancer.settings.v1', {
+            storage.set('clearread.settings.v1', {
                 blockedKeywords: ['测试屏蔽词'],
                 blockedAuthors: ['屏蔽用户'],
             });
@@ -85,7 +85,7 @@
         </div>
     </main>
 
-    <script src="../weibo-reader-enhancer.user.js"></script>
+    <script src="../clearread.user.js"></script>
     <script>
         window.setTimeout(() => {
             const dynamicArticle = document.createElement('article');
@@ -111,7 +111,7 @@
                 ['侧栏推荐隐藏', isHidden('#people-recommendation')],
                 ['普通热搜保留', !isHidden('#hot-search')],
                 ['商业热搜隐藏', isHidden('#sponsored-topic')],
-                ['设置面板已挂载', Boolean(document.querySelector('#weibo-reader-enhancer-root'))],
+                ['设置面板已挂载', Boolean(document.querySelector('#clearread-root'))],
             ];
             const passed = checks.filter(([, ok]) => ok).length;
             const output = document.querySelector('#fixture-result');
