@@ -72,11 +72,32 @@
                     </div>
                 </div>
             </div>
+            <div id="image-badge-scroller" class="vue-recycle-scroller">
+                <div class="vue-recycle-scroller__item-wrapper">
+                    <div class="vue-recycle-scroller__item-view" style="transform: translateY(0px)">
+                        <div id="image-badge-measure" class="wbpro-scroller-item">
+                            <article id="image-badge-ad" class="woo-panel-main">
+                                <a href="/u/10009">图片徽标广告账号</a>
+                                <div class="meta">
+                                    <div class="wbpro-tag-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==#icon_auth_white.png" alt=""></div>
+                                    1分钟前
+                                </div>
+                                <div class="wbpro-feed-content">微博把可见的“广告”文字画进图片时，仍应隐藏整条微博。</div>
+                            </article>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div id="static-feed">
                 <article id="normal" class="woo-panel-main">
                     <a href="/u/10001">正常用户</a>
                     <div>3分钟前 来自微博网页版</div>
                     <div class="wbpro-feed-content">这是一条正常微博，正文里会讨论广告行业，但不应因此被隐藏。</div>
+                </article>
+                <article id="normal-image-badge" class="woo-panel-main">
+                    <a href="/u/10010">普通图片徽标账号</a>
+                    <div class="meta"><div class="wbpro-tag-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="普通徽标"></div> 2分钟前</div>
+                    <div class="wbpro-feed-content">只有普通图片徽标，不应被当成广告。</div>
                 </article>
                 <article id="recommended" class="woo-panel-main">
                     <a href="/u/10002">推荐账号</a>
@@ -157,10 +178,13 @@
             const ad = document.querySelector('#ad');
             const checks = [
                 ['普通微博保留', !isHidden('#normal')],
+                ['普通图片徽标微博保留', !isHidden('#normal-image-badge')],
                 ['广告后的微博保留', !isHidden('#normal-after-ad')],
                 ['荐读微博隐藏', isHidden('#recommended')],
                 ['非 article 虚拟广告隐藏', isHidden('#ad')],
                 ['article 广告微博隐藏', isHidden('#article-ad')],
+                ['图片广告徽标微博隐藏', isHidden('#image-badge-ad')],
+                ['图片广告徽标测量外层折叠', document.querySelector('#image-badge-measure').classList.contains('wre-virtual-item-hidden') && document.querySelector('#image-badge-measure').getBoundingClientRect().height > 0 && document.querySelector('#image-badge-measure').getBoundingClientRect().height <= 2],
                 ['虚拟广告标记测量外层', ad.classList.contains('wre-virtual-hidden') && document.querySelector('#virtual-ad-measure').classList.contains('wre-virtual-item-hidden')],
                 ['虚拟列表测量节点折叠为 1px', ad.getBoundingClientRect().height === 0 && document.querySelector('#virtual-ad-measure').getBoundingClientRect().height > 0 && document.querySelector('#virtual-ad-measure').getBoundingClientRect().height <= 2],
                 ['虚拟列表缓存高度已更新', virtualState.initialSize > 100 && virtualState.currentSize <= 2],

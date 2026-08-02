@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         净阅 ClearRead — 多站阅读增强器
 // @namespace    https://local.invalid/clearread
-// @version      0.3.3
+// @version      0.3.4
 // @description  多站网页阅读增强器；当前支持清理微博广告、荐读和侧栏噪音，并提供专注模式与 J/K 阅读导航。
 // @author       Desnowy (sakaman)
 // @license      MIT
@@ -22,7 +22,7 @@
 (function () {
     'use strict';
 
-    const VERSION = '0.3.3';
+    const VERSION = '0.3.4';
     const INSTANCE_KEY = '__CLEARREAD_INSTANCE__';
     const STORAGE_KEY = 'clearread.settings.v1';
     const LEGACY_STORAGE_KEYS = Object.freeze(['weibo-reader-enhancer.settings.v1']);
@@ -86,6 +86,10 @@
 
     const PROMOTED_LABELS = new Set(['广告', '推广', '商业推广', '赞助']);
     const RECOMMENDED_LABELS = new Set(['荐读', '推荐', '热门推荐', '相关推荐', '为你推荐']);
+    // Weibo can render the visible “广告” disclosure as an image with no
+    // accessible text, alt, or title. Keep this tied to the dedicated badge
+    // class and asset name instead of guessing from the account or post body.
+    const PROMOTED_IMAGE_BADGE_SELECTOR = '.wbpro-tag-img img[src*="icon_auth_"]';
     const SIDEBAR_RECOMMENDATION_TITLES = new Set([
         '你可能感兴趣的人',
         '可能感兴趣的人',
@@ -413,6 +417,9 @@
         if (settings.hideAds) {
             if (article.matches(STRONG_AD_SELECTOR) || article.querySelector(STRONG_AD_SELECTOR)) {
                 return { category: 'ad', reason: '广告属性' };
+            }
+            if (article.querySelector(PROMOTED_IMAGE_BADGE_SELECTOR)) {
+                return { category: 'ad', reason: '广告图片标识' };
             }
             const promotedLabel = findExactMarker(article, PROMOTED_LABELS);
             if (promotedLabel) {
